@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PaperTrail — Research Agent</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-text">
+        <strong>PaperTrail</strong>
+        <span>Research Agent</span>
+      </div>
+      <button class="icon-btn sidebar-toggle" id="sidebarClose" title="Collapse sidebar" aria-label="Collapse sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6l-6 6 6 6M19 6l-6 6 6 6"/></svg>
+      </button>
+    </div>
+
+    <button class="new-chat" id="newChatBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      New chat
+    </button>
+
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="searchChats" type="search" placeholder="Search chats" autocomplete="off">
+    </div>
+
+    <div class="sidebar-section-label">Your chats</div>
+    <div class="conversation-list" id="conversationList"></div>
+
+    <div class="sidebar-footer">
+      <button class="footer-btn" id="libraryBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 5.5h6v14H4zM14 5.5h6v14h-6z"/></svg>
+        <span>Paper library</span>
+        <span class="count-pill" id="paperCount">0</span>
+      </button>
+      <button class="footer-btn" id="themeBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg>
+        <span id="themeLabel">Light mode</span>
+      </button>
+      <div class="status-line"><span class="status-dot" id="statusDot"></span><span id="statusText">Checking service…</span></div>
+    </div>
+  </aside>
+  <div class="sidebar-resize" id="sidebarResize" role="separator" aria-orientation="vertical" tabindex="0"
+       title="Drag to resize · click to collapse or expand" aria-label="Resize sidebar">
+    <span class="resize-grip"></span>
+  </div>
+  <div class="sidebar-scrim" id="sidebarScrim"></div>
+
+  <!-- ── Main chat ───────────────────────────────────────────────────── -->
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" title="Open sidebar" aria-label="Open sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h16"/></svg>
+      </button>
+      <div class="topbar-title">
+        <div id="chatTitle">New chat</div>
+        <div class="topbar-subtitle" id="chatSubtitle">Ask across all your papers</div>
+      </div>
+      <div class="topbar-actions">
+        <span class="model-pill" id="modelPill">Gemini · grounded</span>
+        <button class="icon-btn" id="sourcesToggle" title="Toggle sources" aria-label="Toggle sources">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 5.5h16v13H4zM8 5.5v13M4 10h4M4 14h4"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <section class="messages" id="messages">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-orb">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 3.5h9l5 5v12H5z"/><path d="M14 3.5v5h5"/><path d="M8.5 12.5h7M8.5 16h4.5"/>
+          </svg>
+        </div>
+        <h1>Ask anything across your papers</h1>
+        <p>Upload several research papers, then ask questions, compare findings, and trace every claim back to a page.</p>
+        <div class="suggestions" id="suggestions">
+          <button class="suggestion" data-prompt="Summarize the key contributions of each paper.">Summarize the key contributions of each paper.</button>
+          <button class="suggestion" data-prompt="Where do the papers disagree, and what evidence supports each view?">Where do the papers disagree?</button>
+          <button class="suggestion" data-prompt="What methods were used, and how do they compare across the papers?">Compare the research methods.</button>
+        </div>
+        <button class="empty-upload" id="emptyUploadBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 16V4M7 9l5-5 5 5M4 17v2h16v-2"/></svg>
+          Upload papers
+        </button>
+      </div>
+    </section>
+
+    <div class="composer-wrap">
+      <form class="composer" id="chatForm">
+        <button type="button" class="icon-btn attach-btn" id="attachBtn" title="Upload papers" aria-label="Upload papers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 11.5l-8.6 8.6a5 5 0 01-7.1-7.1l8.5-8.5a3.4 3.4 0 014.8 4.8l-8.4 8.5a1.8 1.8 0 01-2.6-2.6l7.8-7.8"/></svg>
+        </button>
+        <div class="composer-body">
+          <div class="format-bar" id="formatBar" aria-label="Message formatting">
+            <button type="button" data-format="bold" title="Bold (Ctrl+B)" aria-label="Bold"><strong>B</strong></button>
+            <button type="button" data-format="italic" title="Italic (Ctrl+I)" aria-label="Italic"><em>I</em></button>
+            <button type="button" data-format="code" title="Inline code (Ctrl+Shift+C)" aria-label="Inline code">&lt;/&gt;</button>
+            <button type="button" data-format="latex" title="Inline formula (Ctrl+M)" aria-label="Inline formula">∑</button>
+            <button type="button" data-format="blockLatex" title="Display formula" aria-label="Display formula">$$</button>
+            <button type="button" data-format="link" title="Link (Ctrl+K)" aria-label="Link">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M10 13a4 4 0 005.7 0l2.6-2.6a4 4 0 00-5.7-5.7L11 6.3M14 11a4 4 0 00-5.7 0l-2.6 2.6a4 4 0 005.7 5.7l1.6-1.6"/></svg>
+            </button>
+            <button type="button" data-format="list" title="Bulleted list" aria-label="Bulleted list">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1" fill="currentColor" stroke="none"/></svg>
+            </button>
+            <span class="format-divider"></span>
+            <button type="button" class="preview-toggle" id="previewToggle" title="Preview formatting" aria-pressed="false">Preview</button>
+          </div>
+          <textarea id="promptInput" rows="1" placeholder="Ask a question about your papers…" autocomplete="off"></textarea>
+          <div class="input-preview hidden" id="inputPreview"></div>
+        </div>
+        <div class="composer-actions">
+          <button type="submit" class="send-btn" id="sendBtn" title="Send" aria-label="Send">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-3.5-6.5z"/><path d="M10.5 13.5L20 4"/></svg>
+          </button>
+          <button type="button" class="stop-btn hidden" id="stopBtn" title="Stop generating" aria-label="Stop generating">
+            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>
+          </button>
+        </div>
+      </form>
+      <div class="composer-note">Markdown shortcuts work here too · Enter to send, Shift+Enter for a new line · citations link to the source page</div>
+    </div>
+  </main>
+
+  <!-- ── Sources drawer ──────────────────────────────────────────────── -->
+  <aside class="sources-panel" id="sourcesPanel">
+    <div class="panel-header">
+      <div class="panel-heading">
+        <div class="panel-title">Sources</div>
+        <div class="panel-subtitle" id="sourcesSubtitle">Citations from the latest answer</div>
+      </div>
+      <button type="button" class="source-scope" id="sourceScope" title="Show only the latest answer">This answer</button>
+      <button class="icon-btn" id="sourcesClose" title="Close sources" aria-label="Close sources">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>
+      </button>
+    </div>
+    <div class="sources-list" id="sourcesList">
+      <div class="panel-empty">Ask a question to see the exact excerpts used to build the answer.</div>
+    </div>
+  </aside>
+
+  <!-- ── Library drawer ──────────────────────────────────────────────── -->
+  <aside class="sources-panel library-panel" id="libraryPanel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Paper library</div>
+        <div class="panel-subtitle" id="librarySubtitle">0 papers indexed</div>
+      </div>
+      <button class="icon-btn" id="libraryClose" title="Close library" aria-label="Close library">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>
+      </button>
+    </div>
+    <div class="sources-list" id="libraryList"></div>
+    <button class="panel-upload" id="libraryUploadBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 16V4M7 9l5-5 5 5M4 17v2h16v-2"/></svg>
+      Add papers
+    </button>
+  </aside>
+
+  <!-- ── Upload modal ────────────────────────────────────────────────── -->
+  <div class="modal hidden" id="uploadModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2>Upload research papers</h2>
+          <p>Add multiple PDFs at once. Text files and Markdown work too.</p>
+        </div>
+        <button class="icon-btn" id="uploadClose" title="Close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>
+        </button>
+      </div>
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" multiple accept=".pdf,.txt,.md,.markdown" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 16V4M7 9l5-5 5 5M4 16v4h16v-4"/></svg>
+        <strong>Drag papers here</strong>
+        <span>or <button type="button" class="link-btn" id="browseBtn">browse files</button> · PDF, TXT, MD · up to 40 MB each</span>
+      </div>
+      <div class="selected-files" id="selectedFiles"></div>
+      <div class="progress-track hidden" id="progressTrack"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="upload-results" id="uploadResults"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancelUpload">Cancel</button>
+        <button class="btn-primary" id="confirmUpload" disabled>Index papers</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack"></div>
+</div>
+<script src="{{ url_for('static', filename='vendor/marked.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/katex.min.js') }}"></script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

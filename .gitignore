@@ -1,0 +1,50 @@
+# ── Secrets ──────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Python ───────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# ── Virtual environments ─────────────────────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+
+# ── Tooling / caches ─────────────────────────────────────────────────────
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+*.log
+
+# ── Generated local data ─────────────────────────────────────────────────
+# Created automatically by config.py / app.py; never commit user papers.
+data/
+uploads/
+chroma_db/
+*.sqlite3
+*.sqlite3-journal
+*.db-journal
+
+# ── Frontend ─────────────────────────────────────────────────────────────
+# static/vendor/ is intentionally tracked (offline Marked + KaTeX assets).
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# ── Editors / OS ─────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
